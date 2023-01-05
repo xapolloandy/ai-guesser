@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+	  <link rel="stylesheet" href="style.css">
+	<style>
+  #navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: black;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+  }
+  #navbar a {
+    color: white;
+  }
+
+  .dropdown {
+    position: relative;
+  }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: black;
+    color: white;
+    min-width: 160px;
+    z-index: 1;
+  }
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+</style>
+  <title>AI Art Guesser Game</title>
+</head>
+<body>
+	<div id="navbar">
+		
+  <div id="logo"><img src="logo.png" style="margin-top: 70px" alt="Logo" onclick="location.reload();"></div>
+		  <div style="margin-top: 30px" id="score">Score: 0</div>
+				  <div style="margin-top: 30px" id="highscore">Highscore: 0</div>
+		<div id="level" style="margin-top: 30px">Level: 0</div>
+
+
+
+  <div style="margin-top: 30px">
+        <a style="margin-right: 35px" href="#">Art</a>
+        <a style="margin-right: 35px" href="#">Landmarks</a>
+        <a style="margin-right: 35px" href="#">Memes</a>
+      </div>
+    </div>
+	
+  <p style="margin-top: 35px; margin-bottom: 35px; font-size: 200%" class="white-text">Guess the landmark correctly to move on to the next round:</p>
+	  <body>
+    <div style="margin-top: 50px" id="buttonContainer"></div>
+	  <div id="imageAnswerContainer"></div>
+      <div id="imageContainer" style="margin-top: 110px; margin-right: 600px; transform: scale(2); z-index: -1"></div>
+	  </body>
+		
+<script>
+const list1 = ["Eiffel Tower", "Statue of Liberty", "Big Ben", "Sydney Opera House", "Taj Mahal", "Great Wall of China", "Christ the Redeemer", "Pyramids of Giza", "Colosseum", "Burj Khalifa", "The Louvre", "Golden Gate Bridge", "Mount Rushmore", "Arc de Triomphe", "Mount Everest", "Stonehenge", "Leaning Tower of Pisa", "Grand Canyon", "London Eye", "Kremlin", "Moai on Easter Island", "Parthenon Temple", "Buckingham Palace", "Tower Bridge", "The Whitehouse", "The Empire State Building", "Times Square", "Alcatraz Island", "Niagara Falls", "Notre-Dame", "Mers-les-Bains Beach", "Sheikh Zayed Grand Mosque", "Mount Fuji", "Tokyo Skytree", "Tokyo Tower", "Imperial Palace"];
+
+const listeffect = ["made entirely out of bubblegum",
+  "in the style of salvador dali",
+  "made of lego",
+  "made of cheese",
+  "psychelic 3d render",
+  "made of vines",
+  "made of solid gold",
+  "made of banana skins",
+  "one line drawing",
+  "in a galaxy far far away",
+  "art nouveau style",
+  "on a tiny planet in space",
+  "in the style of mc escher",
+  "made of playdoh"
+				   ];
+
+let score = 0;
+let currentPrompts = [];
+
+
+let level = localStorage.getItem("level") || 0;
+
+
+document.getElementById("level").innerHTML = `Level: ${level}`;
+	
+
+let highScore = localStorage.getItem("highScore") || 0;
+
+
+document.getElementById("highscore").innerHTML = `Highscore: ${highScore}`;
+
+
+function updateHighScore(newScore) {
+  if (newScore > highScore) {
+    highScore = newScore;
+    localStorage.setItem("highScore", highScore);
+    document.getElementById("highscore").innerHTML = `Highscore: ${highScore}`;
+  }
+}
+
+	
+async function generateImage() {
+
+  const buttonContainer = document.getElementById("buttonContainer");
+  buttonContainer.innerHTML = "";
+
+
+while (currentPrompts.length < 6) {
+  const promptIndex = Math.floor(Math.random() * list1.length);
+  if (!currentPrompts.includes(list1[promptIndex])) {
+    currentPrompts.push(list1[promptIndex]);
+  }
+}
+
+let buttons = [];
+currentPrompts.forEach(prompt => {
+  const button = document.createElement("button");
+  button.innerText = prompt;
+  button.addEventListener("click", checkGuess);
+  buttons.push(button);
+});
+
+buttons.sort(() => Math.random() - 0.5);
+
+buttons.forEach(button => {
+  buttonContainer.appendChild(button);
+});
+
+
+  const prompt2Index = Math.floor(Math.random() * listeffect.length);
+  const currentPrompt2 = listeffect[prompt2Index];
+
+  const imagePrompt = `${currentPrompts[0]} ${currentPrompt2}`;
+  const response = await fetch(`https://api.openai.com/v1/images/generations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer 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`
+    },
+    body: JSON.stringify({
+      model: "image-alpha-001",
+      prompt: imagePrompt,
+      num_images: 1,
+      size: "256x256",
+      response_format: "url"
+    })
+  });
+  const imageUrl = (await response.json()).data[0].url;
+
+  const imageContainer = document.getElementById("imageContainer");
+  imageContainer.innerHTML = `<img src="${imageUrl}"/>`;
+}
+
+const imageContainer = document.getElementById("imageContainer");
+imageContainer.innerHTML = "";
+
+function checkGuess(event) {
+  const promptGuess = event.target.innerText;
+
+  if (currentPrompts[0] === promptGuess) {
+    score++;
+    document.getElementById("score").innerHTML = "Score: " + score;
+	  
+	  if (score > highScore) {
+  highScore = score;
+  localStorage.setItem("highScore", highScore);
+}
+document.getElementById("highscore").innerHTML = `Highscore: ${highScore}`;
+
+    currentPrompts = [];
+    alert("Correct!");
+    generateImage();
+  } else {
+    alert("You Lost! Your streak was " + score + ". The correct answer was " + currentPrompts[0] + ".");
+    document.getElementById("score").innerHTML = "Score: 0";
+    currentPrompts = [];
+	location.reload();
+  }
+}
+
+
+generateImage();
+  </script>
+</body>
+	<footer>
+  <div class="footer-container">
+	<p>Contact us at <a href="mailto:info@ai-guesser.com">info@ai-guesser.com</a></p>
+    <a href="https://twitter.com/ai-guesser" target="_blank"><img src="twitter.png" alt="Twitter"></a>
+	<a href="https://instagram.com/ai-guesser" target="_blank"><img src="instagram.png" alt="Instagram"></a>
+    <a href="https://facebook.com/ai-guesser" target="_blank"><img src="facebook.png" alt="Facebook"></a>
+    <p>Copyright 2022 AI-GUESSER</p>
+  </div>
+</footer>
+
+</html>
